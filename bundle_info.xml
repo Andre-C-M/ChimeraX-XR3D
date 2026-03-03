@@ -1,0 +1,39 @@
+<BundleInfo name="ChimeraX-SamsungXR"
+    version="0.1" package="chimerax.samsung_xr"
+    customInit="true"
+    minSessionVersion="1" maxSessionVersion="1">
+
+  <Author>André Michaelis</Author>
+  <Email>michaelis@biochem.mpg.de</Email>
+  <URL>https://github.com/Andre-C-M/ChimeraX-SamsungXR</URL>
+
+  <Synopsis>3D cursor, selection, and hover labels for Samsung Odyssey 3D displays</Synopsis>
+  <Description>
+Adds interactive 3D features for autostereo displays using the vrto3d SteamVR driver
+(Samsung Odyssey G90XF/G90XH and similar lenticular displays with eye tracking).
+
+Features:
+- 3D cursor at correct stereo depth (5 styles: sphere, crosshair, diamond, arrow, pointer)
+- 3D selection rectangle for region-based selection
+- 3D hover labels for atoms, residues, and bonds
+- Press C to cycle cursor styles
+
+Requires ChimeraX daily build 2026-02-27 or newer (vrto3d base support).
+  </Description>
+
+  <Categories>
+    <Category name="VR"/>
+  </Categories>
+
+  <Dependencies>
+    <Dependency name="ChimeraX-Core" version="~=1.1"/>
+    <Dependency name="ChimeraX-XR" version="~=1.0"/>
+    <Dependency name="ChimeraX-Label" version="~=1.0"/>
+  </Dependencies>
+
+  <Classifiers>
+    <PythonClassifier>Development Status :: 3 - Alpha</PythonClassifier>
+    <PythonClassifier>License :: Freeware</PythonClassifier>
+  </Classifiers>
+
+</BundleInfo>
