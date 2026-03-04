@@ -1,17 +1,18 @@
 # vim: set expandtab shiftwidth=4 softtabstop=4:
 
-"""Samsung XR backing window with 3D cursor, selection, and hover labels.
+"""XR 3D interaction: enhanced backing window with 3D cursor, selection, and hover.
 
-This module provides an enhanced backing window for vrto3d-driven
-autostereo displays.  It extends the upstream XRBackingWindow concept
-with:
+This module provides an enhanced backing window for ALL OpenXR autostereo
+displays (Sony Spatial Reality, Acer SpatialLabs, Samsung Odyssey 3D).
+It extends the upstream XRBackingWindow with:
 
 - 3D cursor tracking at stereo depth (multiple styles, press C to cycle)
 - 3D selection rectangle for ctrl+drag region selection
 - 3D hover labels for atoms, residues, and bonds
 
-The enable_samsung_xr_mouse_modes() entry point is called by the
-monkey-patched _vrto3d_screen_setup in __init__.py.
+The enable_xr3d_mouse_modes() entry point is called by the monkey-patched
+_enable_xr_mouse_modes in __init__.py, which is invoked by ALL display
+setup functions (Sony, Acer, Samsung).
 """
 
 import time
@@ -19,57 +20,41 @@ import time
 from .cursor3d import Cursor3D, SelectionRect3D, CURSOR_STYLES, view_rotation
 
 
-def enable_samsung_xr_mouse_modes(session):
-    """Create a SamsungXRBackingWindow on the Samsung display.
+def enable_xr3d_mouse_modes(session, screen_model_name=None,
+                             openxr_window_captures_events=False,
+                             direct_pick=False):
+    """Create an XR3DBackingWindow on the XR display.
 
-    Called from the monkey-patched _vrto3d_screen_setup.
-    Uses direct_pick coordinate mapping (vrto3d per-eye render is portrait,
-    screen is landscape — standard mapping through the graphics pane loses
-    accuracy due to aspect ratio mismatch).
+    Called from the monkey-patched _enable_xr_mouse_modes for all
+    display types. Parameters are passed through from the original
+    display setup function.
     """
-    screen = _find_samsung_screen(session)
-    if screen is None:
-        session.logger.warning(
-            'ChimeraX-SamsungXR: Could not find Samsung display.')
+    from chimerax.samsung_xr import _get_xr_screens
+    xr_screens = _get_xr_screens()
+    if xr_screens is None:
+        session.logger.warning('ChimeraX-SamsungXR: xr_screens not found.')
         return False
-    SamsungXRBackingWindow(session, screen)
+    screen = xr_screens.find_xr_screen(session, screen_model_name)
+    if screen is None:
+        session.logger.warning('Could not enable mouse on OpenXR screen.')
+        return False
+    XR3DBackingWindow(session, screen,
+                      in_front=openxr_window_captures_events,
+                      direct_pick=direct_pick)
     session.logger.info(
-        f'ChimeraX-SamsungXR: Enabled 3D interaction on "{screen.model()}"')
+        f'ChimeraX-SamsungXR: 3D cursor enabled on "{screen.model()}"')
     return True
 
 
-_samsung_screen_models = ['Odyssey G90XF', 'Odyssey G90XH']
+class XR3DBackingWindow:
+    """Backing window for OpenXR autostereo displays with full 3D interaction.
 
-
-def _find_samsung_screen(session):
-    """Find a Samsung Odyssey screen among connected displays."""
-    # Also check upstream xr_screen_model_names in case more are added
-    try:
-        from chimerax.xr.xr_screens import xr_screen_model_names
-        model_names = list(set(_samsung_screen_models + xr_screen_model_names))
-    except ImportError:
-        model_names = _samsung_screen_models
-
-    screens = session.ui.screens()
-    for screen in screens:
-        if screen.model() in model_names:
-            return screen
-    found_names = [screen.model() for screen in screens]
-    session.logger.warning(
-        f'ChimeraX-SamsungXR: Screens found: {", ".join(found_names)}. '
-        f'None match Samsung models: {", ".join(_samsung_screen_models)}')
-    return None
-
-
-class SamsungXRBackingWindow:
-    """Backing window for Samsung Odyssey 3D displays with full 3D interaction.
-
-    Creates a transparent fullscreen Qt window on the Samsung display to
-    capture mouse/keyboard events, with:
+    Works on all XR displays (Sony, Acer, Samsung). Creates a fullscreen
+    Qt window on the display to capture mouse/keyboard events, with:
     - 3D cursor at correct stereo depth
     - 3D selection rectangle for ctrl+drag
     - 3D hover labels for atoms/residues/bonds
-    - Direct pick coordinate mapping for vrto3d
+    - Optional direct_pick coordinate mapping (vrto3d)
     """
 
     def __init__(self, session, screen):

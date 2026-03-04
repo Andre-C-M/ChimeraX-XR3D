@@ -3,83 +3,104 @@
 from chimerax.core.toolshed import BundleAPI
 
 
-class _SamsungXRAPI(BundleAPI):
-    """Bundle API for Samsung XR 3D interaction features.
+class _XR3DInteractionAPI(BundleAPI):
+    """Bundle API for 3D cursor, selection, and hover on XR displays.
 
-    On initialize(), monkey-patches the vrto3d screen setup in
-    chimerax.xr.xr_screens to use our enhanced backing window with
-    3D cursor, selection rectangle, and hover labels.
+    On initialize(), monkey-patches _enable_xr_mouse_modes in
+    xr_screens to create our enhanced backing window with 3D cursor,
+    selection rectangle, and hover labels on ALL XR displays
+    (Sony, Acer, Samsung).
 
     When the upstream registration hook API lands, this will switch
-    to the clean register_xr_screen_setup() call instead.
+    to the clean registration call instead.
     """
     api_version = 1
 
     @staticmethod
     def initialize(session, bi):
-        """Called at ChimeraX startup (customInit=true).
-        Patches _vrto3d_screen_setup to use our enhanced version."""
-        _install_vrto3d_hook(session)
+        """Called at ChimeraX startup (customInit=true)."""
+        _install_hook(session)
 
     @staticmethod
     def finish(session, bi):
-        """Called at ChimeraX shutdown. Restore original setup if needed."""
-        _remove_vrto3d_hook()
+        """Called at ChimeraX shutdown."""
+        _remove_hook()
 
 
 # ---------------------------------------------------------------------------
 # Monkey-patching infrastructure
 # ---------------------------------------------------------------------------
 
-_original_vrto3d_setup = None
+_original_enable_xr_mouse_modes = None
 
 
-def _install_vrto3d_hook(session):
-    """Replace _vrto3d_screen_setup in xr_screens with our enhanced version."""
-    global _original_vrto3d_setup
+def _get_xr_screens():
+    """Import xr_screens from the correct location.
+    Older builds have it at chimerax.vive, newer at chimerax.xr."""
     try:
         from chimerax.xr import xr_screens
+        return xr_screens
     except ImportError:
+        pass
+    try:
+        from chimerax.vive import xr_screens
+        return xr_screens
+    except ImportError:
+        pass
+    return None
+
+
+def _install_hook(session):
+    """Patch _enable_xr_mouse_modes to use our enhanced backing window
+    with 3D cursor on ALL XR displays (Sony, Acer, Samsung)."""
+    global _original_enable_xr_mouse_modes
+    xr_screens = _get_xr_screens()
+    if xr_screens is None:
         session.logger.warning(
-            'ChimeraX-SamsungXR: chimerax.xr.xr_screens not found. '
-            'Need ChimeraX daily build 2026-02-27 or newer.')
+            'ChimeraX-SamsungXR: xr_screens module not found.')
         return
 
-    # Save the original so we can restore it later
-    _original_vrto3d_setup = getattr(xr_screens, '_vrto3d_screen_setup', None)
+    # Save the original
+    _original_enable_xr_mouse_modes = xr_screens._enable_xr_mouse_modes
 
-    # Also add Samsung models if not already present
+    # Add Samsung models if not already present
     for model in ('Odyssey G90XF', 'Odyssey G90XH'):
         if model not in xr_screens.xr_screen_model_names:
             xr_screens.xr_screen_model_names.append(model)
 
-    # Replace with our enhanced setup
-    xr_screens._vrto3d_screen_setup = _enhanced_vrto3d_setup
+    # Replace with our enhanced version
+    xr_screens._enable_xr_mouse_modes = _enhanced_enable_xr_mouse_modes
 
-    session.logger.info('ChimeraX-SamsungXR: 3D interaction features loaded')
-
-
-def _remove_vrto3d_hook():
-    """Restore original _vrto3d_screen_setup."""
-    global _original_vrto3d_setup
-    if _original_vrto3d_setup is not None:
-        try:
-            from chimerax.xr import xr_screens
-            xr_screens._vrto3d_screen_setup = _original_vrto3d_setup
-        except ImportError:
-            pass
-        _original_vrto3d_setup = None
+    session.logger.info(
+        'ChimeraX-SamsungXR: 3D cursor enabled for all XR displays')
 
 
-def _enhanced_vrto3d_setup(openxr_camera):
-    """Enhanced vrto3d screen setup with 3D cursor, selection, and hover.
+def _remove_hook():
+    """Restore original _enable_xr_mouse_modes."""
+    global _original_enable_xr_mouse_modes
+    if _original_enable_xr_mouse_modes is not None:
+        xr_screens = _get_xr_screens()
+        if xr_screens is not None:
+            xr_screens._enable_xr_mouse_modes = _original_enable_xr_mouse_modes
+        _original_enable_xr_mouse_modes = None
 
-    Replaces the upstream _vrto3d_screen_setup which only enables basic
-    mouse modes. Our version creates a SamsungXRBackingWindow with full
-    3D interaction support.
+
+def _enhanced_enable_xr_mouse_modes(session, screen_model_name=None,
+                                     openxr_window_captures_events=False,
+                                     direct_pick=False, **kwargs):
+    """Enhanced _enable_xr_mouse_modes that creates our 3D-capable
+    backing window instead of the vanilla XRBackingWindow.
+
+    Called by all display setup functions (Sony, Acer, Samsung).
+    Passes through direct_pick and openxr_window_captures_events
+    from the original caller.
     """
-    from .backing_window import enable_samsung_xr_mouse_modes
-    enable_samsung_xr_mouse_modes(openxr_camera._session)
+    from .backing_window import enable_xr3d_mouse_modes
+    return enable_xr3d_mouse_modes(
+        session,
+        screen_model_name=screen_model_name,
+        openxr_window_captures_events=openxr_window_captures_events,
+        direct_pick=direct_pick)
 
 
-bundle_api = _SamsungXRAPI()
+bundle_api = _XR3DInteractionAPI()
