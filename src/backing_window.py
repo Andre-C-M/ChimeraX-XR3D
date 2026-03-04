@@ -29,10 +29,10 @@ def enable_xr3d_mouse_modes(session, screen_model_name=None,
     display types. Parameters are passed through from the original
     display setup function.
     """
-    from chimerax.samsung_xr import _get_xr_screens
+    from chimerax.xr3d import _get_xr_screens
     xr_screens = _get_xr_screens()
     if xr_screens is None:
-        session.logger.warning('ChimeraX-SamsungXR: xr_screens not found.')
+        session.logger.warning('ChimeraX-XR3D: xr_screens not found.')
         return False
     screen = xr_screens.find_xr_screen(session, screen_model_name)
     if screen is None:
@@ -42,7 +42,7 @@ def enable_xr3d_mouse_modes(session, screen_model_name=None,
                       in_front=openxr_window_captures_events,
                       direct_pick=direct_pick)
     session.logger.info(
-        f'ChimeraX-SamsungXR: 3D cursor enabled on "{screen.model()}"')
+        f'ChimeraX-XR3D: 3D cursor enabled on "{screen.model()}"')
     return True
 
 

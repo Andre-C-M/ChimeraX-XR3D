@@ -57,7 +57,7 @@ def _install_hook(session):
     xr_screens = _get_xr_screens()
     if xr_screens is None:
         session.logger.warning(
-            'ChimeraX-SamsungXR: xr_screens module not found.')
+            'ChimeraX-XR3D: xr_screens module not found.')
         return
 
     # Save the original
@@ -72,7 +72,7 @@ def _install_hook(session):
     xr_screens._enable_xr_mouse_modes = _enhanced_enable_xr_mouse_modes
 
     session.logger.info(
-        'ChimeraX-SamsungXR: 3D cursor enabled for all XR displays')
+        'ChimeraX-XR3D: 3D cursor enabled for all XR displays')
 
 
 def _remove_hook():

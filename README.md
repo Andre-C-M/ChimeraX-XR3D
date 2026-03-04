@@ -1,4 +1,4 @@
-# ChimeraX-SamsungXR
+# ChimeraX-XR3D
 
 3D cursor, selection, and hover labels for OpenXR autostereo displays in UCSF ChimeraX.
 
@@ -23,7 +23,7 @@ Works on all OpenXR autostereo displays: Sony Spatial Reality, Acer SpatialLabs,
 From ChimeraX command line:
 
 ```
-devel install /path/to/ChimeraX-SamsungXR
+devel install /path/to/ChimeraX-XR3D
 ```
 
 ## Usage
