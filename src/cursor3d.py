@@ -315,6 +315,10 @@ class Cursor3D:
         self._model.set_geometry(va, na, self._base_ta)
         self._model.position = Place(origin=pos)
 
+    @property
+    def deleted(self):
+        return self._model is None or self._model.deleted
+
     def hide(self):
         if self._model is not None:
             self._model.display = False

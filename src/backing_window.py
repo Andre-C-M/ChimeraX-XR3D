@@ -271,6 +271,14 @@ class XR3DBackingWindow:
         mouse pause to show hover labels."""
         if self._widget is None:
             return 'delete handler'
+        # Session close removes models without firing 'vr stopped'.
+        # Detect this and clean up to avoid drawing deleted models.
+        if self._cursor is not None and self._cursor.deleted:
+            self._cursor = None
+            self._sel_rect = None
+            self._widget.deleteLater()
+            self._widget = None
+            return 'delete handler'
         from Qt.QtGui import QCursor
         cp = QCursor.pos()
         if self._session.ui.topLevelAt(cp) != self._widget:
@@ -340,20 +348,33 @@ class XR3DBackingWindow:
     # -------------------------------------------------------------------
 
     def _xr_quit(self, *args):
-        # Remove graphics update handler first to stop rendering our models
+        # Remove graphics update handler first to stop hover/cursor updates
         from chimerax.core.triggerset import DEREGISTER
         if self._graphics_update_handler is not None:
             self._session.triggers.remove_handler(
                 self._graphics_update_handler)
             self._graphics_update_handler = None
         self._hide_hover_label()
+        # Hide models immediately; defer removal to avoid race with
+        # the render pass that can access positions during this trigger.
         if self._cursor is not None:
-            self._cursor.delete()
-            self._cursor = None
+            self._cursor.hide()
         if self._sel_rect is not None:
-            self._sel_rect.delete()
-            self._sel_rect = None
+            self._sel_rect.hide()
         if self._widget is not None:
-            self._widget.deleteLater()
-            self._widget = None
+            self._widget.hide()
+
+        def _deferred_cleanup(*args):
+            if self._cursor is not None:
+                self._cursor.delete()
+                self._cursor = None
+            if self._sel_rect is not None:
+                self._sel_rect.delete()
+                self._sel_rect = None
+            if self._widget is not None:
+                self._widget.deleteLater()
+                self._widget = None
+            return DEREGISTER
+
+        self._session.triggers.add_handler('new frame', _deferred_cleanup)
         return DEREGISTER

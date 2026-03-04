@@ -176,6 +176,11 @@ def _fit_vrto3d_view(session):
             scene_center=saved_center,
             scene_camera=saved_camera)
 
+        # Update defaults so that view_all / focus commands use the
+        # correct head-relative room center instead of the default (0,1,0).
+        cam._initial_room_center = model_center
+        cam._initial_room_scene_size = room_width
+
         session.logger.info(
             f'ChimeraX-XR3D: vrto3d view fitted, '
             f'head={tuple(round(float(x), 2) for x in head)}')
