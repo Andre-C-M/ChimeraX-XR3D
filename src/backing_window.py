@@ -17,7 +17,7 @@ setup functions (Sony, Acer, Samsung).
 
 import time
 
-from .cursor3d import Cursor3D, SelectionRect3D, CURSOR_STYLES, view_rotation
+from .cursor3d import Cursor3D, SelectionRect3D, CURSOR_STYLES
 
 
 def enable_xr3d_mouse_modes(session, screen_model_name=None,
@@ -57,19 +57,20 @@ class XR3DBackingWindow:
     - Optional direct_pick coordinate mapping (vrto3d)
     """
 
-    def __init__(self, session, screen):
+    def __init__(self, session, screen, in_front=False, direct_pick=False):
         self._session = session
         self._screen = screen
         self._cursor = None
         self._sel_rect = None
         self._sel_start = None
 
-        # Create fullscreen backing Qt window on Samsung screen
+        # Create fullscreen backing Qt window on XR screen
         from Qt.QtWidgets import QWidget
         self._widget = w = QWidget()
 
-        # Transparent, always on top (vrto3d composites underneath)
-        self._make_transparent_in_front(w)
+        # Transparent, always on top when needed (vrto3d composites underneath)
+        if in_front:
+            self._make_transparent_in_front(w)
 
         w.move(screen.geometry().topLeft())
         w.showFullScreen()

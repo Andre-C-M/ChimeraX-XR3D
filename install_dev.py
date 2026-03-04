@@ -1,10 +1,12 @@
+# vim: set expandtab shiftwidth=4 softtabstop=4:
+
 """Install ChimeraX-SamsungXR plugin for local development.
 
 Run this script inside ChimeraX:
-    runscript D:/OneDrive/Work/BindM/Software/ChimeraX/ChimeraX-SamsungXR/install_dev.py
+    runscript /path/to/ChimeraX-SamsungXR/install_dev.py
 
 Or from the ChimeraX command line:
-    devel install D:/OneDrive/Work/BindM/Software/ChimeraX/ChimeraX-SamsungXR editable true
+    devel install /path/to/ChimeraX-SamsungXR editable true
 """
 
 import os
