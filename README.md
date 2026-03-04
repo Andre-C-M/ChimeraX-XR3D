@@ -62,7 +62,6 @@ the monkey-patching will be replaced with a clean registration call.
 
 - **Samsung Hub**: 3D overlay (Ctrl+Shift+2) conflicts with vrto3d SBS. Keep it OFF.
 - **Auto-convert**: Samsung Hub auto-convert must be OFF — causes window focus issues.
-- **Molecule position on xr start**: Molecule may appear below the view on vrto3d. Zoom out and adjust manually.
 
 ## References
 

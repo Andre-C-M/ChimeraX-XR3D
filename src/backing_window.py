@@ -81,6 +81,7 @@ class XR3DBackingWindow:
         self._hover_pos = None
         self._hover_time = 0
         self._hover_active = False
+        self._hover_label_object = (None, None)
 
         # 3D cursor: hide OS cursor, render 3D shape at scene depth
         self._cursor_styles = list(CURSOR_STYLES)
@@ -102,11 +103,12 @@ class XR3DBackingWindow:
         w.keyPressEvent = key_press
 
         # Clean up when XR stops
-        session.triggers.add_handler('vr stopped', self._xr_quit)
+        self._vr_stopped_handler = session.triggers.add_handler(
+            'vr stopped', self._xr_quit)
 
         # Hover labels via graphics update polling
-        session.triggers.add_handler('graphics update',
-                                     self._check_for_mouse_hover)
+        self._graphics_update_handler = session.triggers.add_handler(
+            'graphics update', self._check_for_mouse_hover)
 
     def _make_transparent_in_front(self, w):
         """Make the backing window transparent and always-on-top.
@@ -192,7 +194,7 @@ class XR3DBackingWindow:
     def _dispatch_wheel_event(self, event):
         """Convert wheel event and dispatch."""
         p = event.position()
-        gx, gy = self._backing_to_graphics_coordinates(p.x(), p.y())
+        gx, gy = self._backing_to_render_coordinates(p.x(), p.y())
         e = self._repositioned_event(event, gx, gy)
         mm = self._session.ui.mouse_modes
         mm._wheel_event(e)
@@ -260,17 +262,6 @@ class XR3DBackingWindow:
                 event.phase(), event.inverted(), device=event.device())
         raise RuntimeError(f'Unexpected event type: {event}')
 
-    def _graphics_cursor_position(self):
-        """Return cursor position in graphics coordinates if on our window."""
-        from Qt.QtGui import QCursor
-        cp = QCursor.pos()
-        if self._session.ui.topLevelAt(cp) == self._widget:
-            p = self._widget.mapFromGlobal(cp)
-            x, y = self._backing_to_graphics_coordinates(p.x(), p.y())
-            return (int(x), int(y))
-        mm = self._session.ui.mouse_modes
-        return mm._graphics_cursor_position_original()
-
     # -------------------------------------------------------------------
     # Hover labels
     # -------------------------------------------------------------------
@@ -319,12 +310,11 @@ class XR3DBackingWindow:
         self._hover_label_object = obj, label_type
 
     def _hide_hover_label(self):
-        if hasattr(self, '_hover_label_object'):
-            obj, label_type = self._hover_label_object
-            if obj:
-                from chimerax.label.label3d import label_delete
-                label_delete(self._session, obj, label_type)
-                self._hover_label_object = None, None
+        obj, label_type = self._hover_label_object
+        if obj is not None:
+            from chimerax.label.label3d import label_delete
+            label_delete(self._session, obj, label_type)
+            self._hover_label_object = (None, None)
 
     def _hover_pick(self, x, y):
         pick = self._session.main_view.picked_object(x, y)
@@ -350,6 +340,12 @@ class XR3DBackingWindow:
     # -------------------------------------------------------------------
 
     def _xr_quit(self, *args):
+        # Remove graphics update handler first to stop rendering our models
+        from chimerax.core.triggerset import DEREGISTER
+        if self._graphics_update_handler is not None:
+            self._session.triggers.remove_handler(
+                self._graphics_update_handler)
+            self._graphics_update_handler = None
         self._hide_hover_label()
         if self._cursor is not None:
             self._cursor.delete()
@@ -357,6 +353,7 @@ class XR3DBackingWindow:
         if self._sel_rect is not None:
             self._sel_rect.delete()
             self._sel_rect = None
-        self._widget.deleteLater()
-        self._widget = None
-        return 'delete handler'
+        if self._widget is not None:
+            self._widget.deleteLater()
+            self._widget = None
+        return DEREGISTER

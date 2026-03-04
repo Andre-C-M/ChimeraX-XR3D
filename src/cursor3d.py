@@ -321,6 +321,7 @@ class Cursor3D:
 
     def delete(self):
         if self._model is not None:
+            self._model.display = False
             self._session.models.remove([self._model])
             self._model = None
 
@@ -376,5 +377,6 @@ class SelectionRect3D:
 
     def delete(self):
         if self._model is not None:
+            self._model.display = False
             self._session.models.remove([self._model])
             self._model = None
