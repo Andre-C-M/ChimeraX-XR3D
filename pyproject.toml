@@ -1,0 +1,25 @@
+[build-system]
+requires = ["ChimeraX-BundleBuilder"]
+build-backend = "chimerax.bundle_builder.cx_pep517"
+
+[project]
+name = "ChimeraX-SamsungXR"
+version = "0.1"
+license = {text = "MIT"}
+authors = [{name = "André Michaelis", email = "michaelis@biochem.mpg.de"}]
+description = "3D cursor, selection, and hover labels for Samsung Odyssey 3D displays"
+dynamic = ["classifiers", "requires-python"]
+
+[project.urls]
+Home = "https://github.com/Andre-C-M/ChimeraX-SamsungXR"
+
+[chimerax]
+pure = true
+custom-init = true
+min-session-ver = 1
+max-session-ver = 1
+categories = ["VR"]
+classifiers = ["Development Status :: 3 - Alpha"]
+
+[chimerax.package-data]
+"src/" = ["docs/**"]
