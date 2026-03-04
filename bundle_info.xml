@@ -3,6 +3,8 @@
     customInit="true"
     minSessionVersion="1" maxSessionVersion="1">
 
+  <Author>Andre Michaelis</Author>
+  <Email>michaelis@biochem.mpg.de</Email>
   <URL>https://github.com/Andre-C-M/ChimeraX-SamsungXR</URL>
 
   <Synopsis>3D cursor, selection, and hover labels for all OpenXR autostereo displays</Synopsis>
