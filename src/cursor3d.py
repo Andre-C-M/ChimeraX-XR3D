@@ -241,7 +241,11 @@ class Cursor3D:
         self._model = m = Surface('3D Cursor', session)
         m.color = (255, 150, 0, 255)
         m.pickable = False
-        m.casts_shadows = False
+        # Shadows are a saved per-user preference (default off), not a
+        # hardcoded constant -- otherwise every `xr on` silently discards the
+        # user's choice and it has to be re-typed each session.
+        from .settings import get_settings
+        m.casts_shadows = get_settings(session).cursor_shadows
         m.display = False
         self._apply_style(style)
         session.models.add([m])
@@ -274,7 +278,11 @@ class Cursor3D:
         self._model.vertex_colors = self._base_vc
 
     def set_shadows(self, enabled):
-        """Toggle cursor shadow casting (off by default for performance)."""
+        """Toggle cursor shadow casting on this cursor.
+
+        Does not persist -- the caller (`xr3d cursor shadows`) writes the
+        preference.  Shipped default is off, for performance.
+        """
         if self._model is not None:
             self._model.casts_shadows = enabled
             # casts_shadows is not in Drawing._effects_shader, so changing
@@ -282,12 +290,22 @@ class Cursor3D:
             self._model.redraw_needed(shape_changed=True)
 
     def reset_defaults(self):
-        """Reset style, size, and color to defaults."""
+        """Reset style, size and color to defaults.
+
+        Shadows go back to the SAVED preference, not to off: `xr3d cursor
+        default` should reproduce what a fresh `xr on` gives you, and silently
+        discarding a stored preference is not "default", it is a surprise.
+        """
         self._radius = _DEFAULT_RADIUS
         self._style = _DEFAULT_STYLE
         self._custom_color = None
         if self._model is not None:
-            self._model.casts_shadows = False
+            from .settings import get_settings
+            self._model.casts_shadows = get_settings(
+                self._session).cursor_shadows
+            # _apply_style() below rebuilds geometry, which happens to force
+            # the shadow-map rebuild; be explicit rather than rely on that.
+            self._model.redraw_needed(shape_changed=True)
         self._apply_style(self._style)
 
     def _apply_style(self, style):

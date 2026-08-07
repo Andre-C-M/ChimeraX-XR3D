@@ -58,6 +58,21 @@ def _register_commands(session):
 
 
 def _cmd_cursor(session, style=None, size=None, color=None, shadows=None):
+    # `shadows` is a saved preference, so unlike style/size/color it is
+    # meaningful with no XR session running -- you can set it once at startup,
+    # or before the display is even plugged in, and every later `xr on` honours
+    # it.  Handle it before the active-window guard.
+    if shadows is not None:
+        from .settings import get_settings
+        get_settings(session).cursor_shadows = shadows  # AUTO_SAVE -> on disk
+        if _active_window is not None:
+            _active_window.set_cursor_shadows(shadows)
+        session.logger.info(
+            f'3D cursor shadows: {"on" if shadows else "off"} '
+            '(saved; applies to future sessions)')
+        if style is None and size is None and color is None:
+            return
+
     if _active_window is None:
         session.logger.warning('No active XR3D session')
         return
@@ -74,10 +89,6 @@ def _cmd_cursor(session, style=None, size=None, color=None, shadows=None):
     if color is not None:
         _active_window.set_cursor_color(color)
         session.logger.info(f'3D cursor color: {color}')
-    if shadows is not None:
-        _active_window.set_cursor_shadows(shadows)
-        session.logger.info(
-            f'3D cursor shadows: {"on" if shadows else "off"}')
 
 
 def _cmd_on(session):

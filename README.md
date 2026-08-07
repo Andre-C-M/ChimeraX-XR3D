@@ -45,8 +45,27 @@ devel install /path/to/ChimeraX-XR3D
 | `xr3d cursor default` | Reset style, size, and color to defaults |
 | `xr3d cursor size 0.6` | Change cursor size (default 0.4) |
 | `xr3d cursor color red` | Change cursor color (any ChimeraX color) |
+| `xr3d cursor shadows true` | Turn shadow casting on. **Saved — persists across sessions.** Default off |
 | `xr3d cursor cone size 0.8 color blue` | Combine style, size, and color |
 | `xr3d on` / `xr3d off` | Enable/disable 3D cursor |
+
+### Shadows
+
+The cursor can cast a shadow onto the molecule, which makes its depth much easier to read.
+It is **off by default**, because shadow casting forces a shadow-map rebuild as the cursor
+moves and that is noticeable on slower GPUs.
+
+Turn it on once and it stays on:
+
+```
+xr3d cursor shadows true
+```
+
+The preference is stored per user (ChimeraX `Settings`, saved immediately — there is no
+separate save step), so every later `xr on` starts with shadows already enabled. It can be
+set with **no XR session active**, e.g. from a startup script or before the display is
+connected. `xr3d cursor default` restores your *saved* shadow preference rather than
+forcing shadows off.
 
 ## Architecture
 
